@@ -4,55 +4,69 @@
 <meta charset="utf-8">
 <title>内部AI工具</title>
 <style>
-  /* 页面样式：全屏显示，隐藏滚动条，防止布局错乱 */
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;height:100%;overflow:hidden;}
-  /* 加载提示样式 */
   #tip{padding:20px;font-size:16px;color:#333;}
-  /* iframe样式：全屏嵌套，默认隐藏，验证通过后显示 */
   #iframe{width:100%;height:100%;border:none;display:none;}
 </style>
+<!-- 禁止页面跳转的关键配置 -->
+<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'; form-action 'self'; navigate-to 'self'">
 </head>
 <body>
-<!-- 身份校验提示 -->
 <div id="tip">正在校验钉钉身份...</div>
-<!-- 嵌套目标网站的iframe -->
-<iframe id="iframe" src="" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
+<iframe id="iframe" src="" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals" onload="disableIframeJump(this)"></iframe>
 
-<!-- 钉钉JSAPI，用于身份校验 -->
 <script src="https://g.alicdn.com/dingding/h5-js-sdk/0.2.6/dingtalk.js"></script>
 <script>
-// ========== 已帮你填好关键配置 ==========
-const CORP_ID = "ding1c9e53a8cf90f15ff2c783f7214b6d69"; // 你的钉钉企业ID
-const TARGET_URL = "https://arena.ai/"; // 目标网站地址
+const CORP_ID = "ding1c9e53a8cf90f15ff2c783f7214b6d69";
+const TARGET_URL = "https://arena.ai/";
 
-// 禁用右键、禁用复制，进一步防止地址泄露
-document.addEventListener('contextmenu', e => e.preventDefault()); // 禁用右键菜单
-document.addEventListener('copy', e => e.preventDefault()); // 禁用复制功能
+// 1. 禁用所有复制/右键/分享
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('copy', e => e.preventDefault());
+document.addEventListener('cut', e => e.preventDefault());
+document.addEventListener('paste', e => e.preventDefault());
 
-// 1. 首先判断是否在钉钉内打开
+// 2. 禁止iframe内页面跳转
+function disableIframeJump(iframe) {
+  try {
+    const iframeWindow = iframe.contentWindow;
+    // 禁用iframe内的跳转
+    iframeWindow.location.replace = function() {};
+    iframeWindow.location.href = TARGET_URL;
+    // 禁用a标签跳转
+    const links = iframe.contentDocument.querySelectorAll('a');
+    links.forEach(link => link.setAttribute('target', '_self'));
+  } catch (e) {}
+}
+
+// 3. 钉钉身份校验
 if (!dd.env || !dd.env.platform.isDingTalk) {
   document.getElementById("tip").innerText = "禁止外部访问，请在钉钉内打开";
 } else {
-  // 2. 钉钉环境初始化完成后，获取免登码校验身份
   dd.ready(function () {
     dd.runtime.permission.requestAuthCode({
       corpId: CORP_ID,
-      // 身份校验成功：显示目标网站
       onSuccess: function (res) {
         document.getElementById("tip").style.display = "none";
         const iframe = document.getElementById("iframe");
         iframe.src = TARGET_URL;
         iframe.style.display = "block";
+        // 钉钉容器内禁用分享
+        dd.biz.navigation.setRight({
+          show: false
+        });
       },
-      // 身份校验失败：提示无权限
       onFail: function (err) {
         document.getElementById("tip").innerText = "无访问权限，请使用企业钉钉账号打开";
       }
     });
   });
 }
+
+// 4. 禁止页面本身跳转
+window.location.replace = function() {};
+window.open = function() {};
 </script>
 </body>
-
 </html>
