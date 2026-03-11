@@ -6,67 +6,10 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;height:100%;overflow:hidden;}
-  #tip{padding:20px;font-size:16px;color:#333;}
-  #iframe{width:100%;height:100%;border:none;display:none;}
+  #iframe{width:100%;height:100%;border:none;}
 </style>
-<!-- 禁止页面跳转的关键配置 -->
-<meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'; form-action 'self'; navigate-to 'self'">
 </head>
 <body>
-<div id="tip">正在校验钉钉身份...</div>
-<iframe id="iframe" src="" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals" onload="disableIframeJump(this)"></iframe>
-
-<script src="https://g.alicdn.com/dingding/h5-js-sdk/0.2.6/dingtalk.js"></script>
-<script>
-const CORP_ID = "ding1c9e53a8cf90f15ff2c783f7214b6d69";
-const TARGET_URL = "https://arena.ai/";
-
-// 1. 禁用所有复制/右键/分享
-document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('copy', e => e.preventDefault());
-document.addEventListener('cut', e => e.preventDefault());
-document.addEventListener('paste', e => e.preventDefault());
-
-// 2. 禁止iframe内页面跳转
-function disableIframeJump(iframe) {
-  try {
-    const iframeWindow = iframe.contentWindow;
-    // 禁用iframe内的跳转
-    iframeWindow.location.replace = function() {};
-    iframeWindow.location.href = TARGET_URL;
-    // 禁用a标签跳转
-    const links = iframe.contentDocument.querySelectorAll('a');
-    links.forEach(link => link.setAttribute('target', '_self'));
-  } catch (e) {}
-}
-
-// 3. 钉钉身份校验
-if (!dd.env || !dd.env.platform.isDingTalk) {
-  document.getElementById("tip").innerText = "禁止外部访问，请在钉钉内打开";
-} else {
-  dd.ready(function () {
-    dd.runtime.permission.requestAuthCode({
-      corpId: CORP_ID,
-      onSuccess: function (res) {
-        document.getElementById("tip").style.display = "none";
-        const iframe = document.getElementById("iframe");
-        iframe.src = TARGET_URL;
-        iframe.style.display = "block";
-        // 钉钉容器内禁用分享
-        dd.biz.navigation.setRight({
-          show: false
-        });
-      },
-      onFail: function (err) {
-        document.getElementById("tip").innerText = "无访问权限，请使用企业钉钉账号打开";
-      }
-    });
-  });
-}
-
-// 4. 禁止页面本身跳转
-window.location.replace = function() {};
-window.open = function() {};
-</script>
+<iframe id="iframe" src="https://arena.ai/" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"></iframe>
 </body>
 </html>
